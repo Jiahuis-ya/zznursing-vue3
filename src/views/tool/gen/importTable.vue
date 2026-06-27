@@ -113,7 +113,7 @@ function handleImportTable() {
   }
   importTable({ 
     tables: tableNames,
-    tplWebType: 'vue3'
+    tplWebType: 'element-plus'
   }).then(res => {
     proxy.$modal.msgSuccess(res.msg)
     if (res.code === 200) {

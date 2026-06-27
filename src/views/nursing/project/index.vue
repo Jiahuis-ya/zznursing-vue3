@@ -1,12 +1,12 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="名称" prop="name">
         <el-input
           v-model="queryParams.name"
           placeholder="请输入名称"
           clearable
-          @keyup.enter.native="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="排序号" prop="orderNo">
@@ -14,7 +14,7 @@
           v-model="queryParams.orderNo"
           placeholder="请输入排序号"
           clearable
-          @keyup.enter.native="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="单位" prop="unit">
@@ -22,7 +22,7 @@
           v-model="queryParams.unit"
           placeholder="请输入单位"
           clearable
-          @keyup.enter.native="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="价格" prop="price">
@@ -30,7 +30,7 @@
           v-model="queryParams.price"
           placeholder="请输入价格"
           clearable
-          @keyup.enter.native="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="护理要求" prop="nursingRequirement">
@@ -38,12 +38,12 @@
           v-model="queryParams.nursingRequirement"
           placeholder="请输入护理要求"
           clearable
-          @keyup.enter.native="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
@@ -52,8 +52,7 @@
         <el-button
           type="primary"
           plain
-          icon="el-icon-plus"
-          size="mini"
+          icon="Plus"
           @click="handleAdd"
           v-hasPermi="['nursing:project:add']"
         >新增</el-button>
@@ -62,8 +61,7 @@
         <el-button
           type="success"
           plain
-          icon="el-icon-edit"
-          size="mini"
+          icon="Edit"
           :disabled="single"
           @click="handleUpdate"
           v-hasPermi="['nursing:project:edit']"
@@ -73,8 +71,7 @@
         <el-button
           type="danger"
           plain
-          icon="el-icon-delete"
-          size="mini"
+          icon="Delete"
           :disabled="multiple"
           @click="handleDelete"
           v-hasPermi="['nursing:project:remove']"
@@ -84,13 +81,12 @@
         <el-button
           type="warning"
           plain
-          icon="el-icon-download"
-          size="mini"
+          icon="Download"
           @click="handleExport"
           v-hasPermi="['nursing:project:export']"
         >导出</el-button>
       </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="projectList" @selection-change="handleSelectionChange">
@@ -101,33 +97,21 @@
       <el-table-column label="单位" align="center" prop="unit" />
       <el-table-column label="价格" align="center" prop="price" />
       <el-table-column label="图片" align="center" prop="image" width="100">
-        <template slot-scope="scope">
+        <template #default="scope">
           <image-preview :src="scope.row.image" :width="50" :height="50"/>
         </template>
       </el-table-column>
       <el-table-column label="护理要求" align="center" prop="nursingRequirement" />
       <el-table-column label="状态" align="center" prop="status" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template slot-scope="scope">
+        <template #default="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['nursing:project:edit']"
-          >修改</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['nursing:project:remove']"
-          >删除</el-button>
+        <template #default="scope">
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['nursing:project:edit']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['nursing:project:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -135,14 +119,14 @@
     <pagination
       v-show="total>0"
       :total="total"
-      :page.sync="queryParams.pageNum"
-      :limit.sync="queryParams.pageSize"
+      v-model:page="queryParams.pageNum"
+      v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
 
     <!-- 添加或修改护理项目对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+      <el-form ref="projectRef" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
             <el-form-item label="名称" prop="name">
@@ -176,175 +160,173 @@
           </el-col>
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+          <el-button @click="cancel">取 消</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
 
-<script>
+<script setup name="Project">
 import { listProject, getProject, delProject, addProject, updateProject } from "@/api/nursing/project"
 
-export default {
-  name: "Project",
-  data() {
-    return {
-      // 遮罩层
-      loading: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
-      // 显示搜索条件
-      showSearch: true,
-      // 总条数
-      total: 0,
-      // 护理项目表格数据
-      projectList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 查询参数
-      queryParams: {
-        pageNum: 1,
-        pageSize: 10,
-        name: null,
-        orderNo: null,
-        unit: null,
-        price: null,
-        image: null,
-        nursingRequirement: null,
-        status: null,
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        name: [
-          { required: true, message: "名称不能为空", trigger: "blur" }
-        ],
-        price: [
-          { required: true, message: "价格不能为空", trigger: "blur" }
-        ],
-        image: [
-          { required: true, message: "图片不能为空", trigger: "blur" }
-        ],
-        nursingRequirement: [
-          { required: true, message: "护理要求不能为空", trigger: "blur" }
-        ],
-      }
-    }
+const { proxy } = getCurrentInstance()
+
+const projectList = ref([])
+const open = ref(false)
+const loading = ref(true)
+const showSearch = ref(true)
+const ids = ref([])
+const single = ref(true)
+const multiple = ref(true)
+const total = ref(0)
+const title = ref("")
+
+const data = reactive({
+  form: {},
+  queryParams: {
+    pageNum: 1,
+    pageSize: 10,
+    name: undefined,
+    orderNo: undefined,
+    unit: undefined,
+    price: undefined,
+    image: undefined,
+    nursingRequirement: undefined,
+    status: undefined,
   },
-  created() {
-    this.getList()
-  },
-  methods: {
-    /** 查询护理项目列表 */
-    getList() {
-      this.loading = true
-      listProject(this.queryParams).then(response => {
-        this.projectList = response.rows
-        this.total = response.total
-        this.loading = false
-      })
-    },
-    // 取消按钮
-    cancel() {
-      this.open = false
-      this.reset()
-    },
-    // 表单重置
-    reset() {
-      this.form = {
-        id: null,
-        name: null,
-        orderNo: null,
-        unit: null,
-        price: null,
-        image: null,
-        nursingRequirement: null,
-        status: null,
-        createBy: null,
-        updateBy: null,
-        remark: null,
-        createTime: null,
-        updateTime: null
-      }
-      this.resetForm("form")
-    },
-    /** 搜索按钮操作 */
-    handleQuery() {
-      this.queryParams.pageNum = 1
-      this.getList()
-    },
-    /** 重置按钮操作 */
-    resetQuery() {
-      this.resetForm("queryForm")
-      this.handleQuery()
-    },
-    // 多选框选中数据
-    handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.id)
-      this.single = selection.length !== 1
-      this.multiple = !selection.length
-    },
-    /** 新增按钮操作 */
-    handleAdd() {
-      this.reset()
-      this.open = true
-      this.title = "添加护理项目"
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset()
-      const id = row.id || this.ids
-      getProject(id).then(response => {
-        this.form = response.data
-        this.open = true
-        this.title = "修改护理项目"
-      })
-    },
-    /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id != null) {
-            updateProject(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功")
-              this.open = false
-              this.getList()
-            })
-          } else {
-            addProject(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功")
-              this.open = false
-              this.getList()
-            })
-          }
-        }
-      })
-    },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      const ids = row.id || this.ids
-      this.$modal.confirm('是否确认删除护理项目编号为"' + ids + '"的数据项？').then(function() {
-        return delProject(ids)
-      }).then(() => {
-        this.getList()
-        this.$modal.msgSuccess("删除成功")
-      }).catch(() => {})
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      this.download('nursing/project/export', {
-        ...this.queryParams
-      }, `project_${new Date().getTime()}.xlsx`)
-    }
+  rules: {
+    name: [
+      { required: true, message: "名称不能为空", trigger: "blur" }
+    ],
+    price: [
+      { required: true, message: "价格不能为空", trigger: "blur" }
+    ],
+    image: [
+      { required: true, message: "图片不能为空", trigger: "blur" }
+    ],
+    nursingRequirement: [
+      { required: true, message: "护理要求不能为空", trigger: "blur" }
+    ],
   }
+})
+
+const { queryParams, form, rules } = toRefs(data)
+
+/** 查询护理项目列表 */
+function getList() {
+  loading.value = true
+  listProject(queryParams.value).then(response => {
+    projectList.value = response.rows
+    total.value = response.total
+    loading.value = false
+  })
 }
+
+/** 取消按钮 */
+function cancel() {
+  open.value = false
+  reset()
+}
+
+/** 表单重置 */
+function reset() {
+  form.value = {
+    id: null,
+    name: null,
+    orderNo: null,
+    unit: null,
+    price: null,
+    image: null,
+    nursingRequirement: null,
+    status: null,
+    createBy: null,
+    updateBy: null,
+    remark: null,
+    createTime: null,
+    updateTime: null
+  }
+  proxy.resetForm("projectRef")
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  queryParams.value.pageNum = 1
+  getList()
+}
+
+/** 重置按钮操作 */
+function resetQuery() {
+  proxy.resetForm("queryRef")
+  handleQuery()
+}
+
+/** 多选框选中数据 */
+function handleSelectionChange(selection) {
+  ids.value = selection.map(item => item.id)
+  single.value = selection.length != 1
+  multiple.value = !selection.length
+}
+
+/** 新增按钮操作 */
+function handleAdd() {
+  reset()
+  open.value = true
+  title.value = "添加护理项目"
+}
+
+/** 修改按钮操作 */
+function handleUpdate(row) {
+  reset()
+  const _id = row.id || ids.value
+  getProject(_id).then(response => {
+    form.value = response.data
+    open.value = true
+    title.value = "修改护理项目"
+  })
+}
+
+/** 提交按钮 */
+function submitForm() {
+  proxy.$refs["projectRef"].validate(valid => {
+    if (valid) {
+      if (form.value.id != null) {
+        updateProject(form.value).then(() => {
+          proxy.$modal.msgSuccess("修改成功")
+          open.value = false
+          getList()
+        })
+      } else {
+        addProject(form.value).then(() => {
+          proxy.$modal.msgSuccess("新增成功")
+          open.value = false
+          getList()
+        })
+      }
+    }
+  })
+}
+
+/** 删除按钮操作 */
+function handleDelete(row) {
+  const _ids = row.id || ids.value
+  proxy.$modal.confirm('是否确认删除护理项目编号为"' + _ids + '"的数据项？').then(function() {
+    return delProject(_ids)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess("删除成功")
+  }).catch(() => {})
+}
+
+/** 导出按钮操作 */
+function handleExport() {
+  proxy.download('nursing/project/export', {
+    ...queryParams.value
+  }, `project_${new Date().getTime()}.xlsx`)
+}
+
+getList()
 </script>
