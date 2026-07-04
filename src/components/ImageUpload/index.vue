@@ -116,6 +116,7 @@ watch(() => props.modelValue, val => {
     // 然后将数组转为对象数组
     fileList.value = list.map(item => {
       if (typeof item === "string") {
+        // isExternal(item)外部url
         if (item.indexOf(baseUrl) === -1 && !isExternal(item)) {
           item = { name: baseUrl + item, url: baseUrl + item }
         } else {
